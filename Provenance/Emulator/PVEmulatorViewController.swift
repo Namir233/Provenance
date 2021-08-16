@@ -101,6 +101,9 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
         }
     }
 
+    var orientationMask: UIInterfaceOrientationMask = .all
+    var orientation: UIInterfaceOrientation = .unknown
+
     let minimumPlayTimeToMakeAutosave: Double = 60
 
     required init(game: PVGame, core: PVEmulatorCore) {
@@ -250,6 +253,41 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
         })
     }
 
+    private func initOrientation() {
+        orientationMask = .all
+        orientation = .portrait
+        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
+            let value = PVSettingsModel.shared.orientation
+            var bit = 0;
+            self.orientationMask = .init(rawValue: 0)
+            self.orientation = .unknown
+            if (value & 8) != 0 {
+                bit += 1
+                self.orientationMask = self.orientationMask.union(.portraitUpsideDown)
+                self.orientation = .portraitUpsideDown
+            }
+            if (value & 1) != 0 {
+                bit += 1
+                self.orientationMask = self.orientationMask.union(.portrait)
+                self.orientation = .portrait
+            }
+            if (value & 2) != 0 {
+                bit += 1
+                self.orientationMask = self.orientationMask.union(.landscapeLeft)
+                self.orientation = .landscapeLeft
+            }
+            if (value & 4) != 0 {
+                bit += 1
+                self.orientationMask = self.orientationMask.union(.landscapeRight)
+                self.orientation = .landscapeRight
+            }
+            UIViewController.attemptRotationToDeviceOrientation()
+            if (bit == 1 && self.orientation.rawValue != UIDevice.current.orientation.rawValue) {
+                UIDevice.current.setValue(self.orientation.rawValue, forKey: "orientation")
+            }
+        }
+    }
+
     // TODO: This method is way too big, break it up
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -258,6 +296,7 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
 
         initNotifcationObservers()
         initCore()
+        initOrientation()
 
         // Load now. Moved here becauase Mednafen needed to know what kind of game it's working with in order
         // to provide the correct data for creating views.
@@ -476,10 +515,6 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
         override var preferredScreenEdgesDeferringSystemGestures: UIRectEdge {
             return .bottom
         }
-
-        override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-            return .all
-        }
     #endif
 
     @objc func appWillEnterForeground(_: Notification?) {
@@ -611,6 +646,61 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
                 actionSheet.preferredAction = action
             }
         }
+        present(actionSheet, animated: true, completion: { () -> Void in
+            PVControllerManager.shared.iCadeController?.refreshListener()
+        })
+    }
+
+    @objc func showOrientationMenu() {
+        let actionSheet = UIAlertController(title: "Orientation", message: nil, preferredStyle: .actionSheet)
+        actionSheet.addAction(UIAlertAction(title: "Auto", style: .default, handler: { (action) in
+            PVSettingsModel.shared.orientation = 0xF
+            self.orientationMask = .all
+            self.orientation = .portrait
+            UIViewController.attemptRotationToDeviceOrientation()
+
+            self.core.setPauseEmulation(false)
+            self.isShowingMenu = false
+            self.enableControllerInput(false)
+        }))
+        actionSheet.addAction(UIAlertAction(title: "Portrait", style: .default, handler: { (action) in
+            PVSettingsModel.shared.orientation = 1
+            self.orientationMask = .portrait
+            self.orientation = .portrait
+            UIViewController.attemptRotationToDeviceOrientation()
+            UIDevice.current.setValue(self.orientation.rawValue, forKey: "orientation")
+
+            self.core.setPauseEmulation(false)
+            self.isShowingMenu = false
+            self.enableControllerInput(false)
+        }))
+        actionSheet.addAction(UIAlertAction(title: "Landscape Left", style: .default, handler: { (action) in
+            PVSettingsModel.shared.orientation = 2
+            self.orientationMask = .landscapeLeft
+            self.orientation = .landscapeLeft
+            UIViewController.attemptRotationToDeviceOrientation()
+            UIDevice.current.setValue(self.orientation.rawValue, forKey: "orientation")
+
+            self.core.setPauseEmulation(false)
+            self.isShowingMenu = false
+            self.enableControllerInput(false)
+        }))
+        actionSheet.addAction(UIAlertAction(title: "Landscape Right", style: .default, handler: { (action) in
+            PVSettingsModel.shared.orientation = 4
+            self.orientationMask = .landscapeRight
+            self.orientation = .landscapeRight
+            UIViewController.attemptRotationToDeviceOrientation()
+            UIDevice.current.setValue(self.orientation.rawValue, forKey: "orientation")
+
+            self.core.setPauseEmulation(false)
+            self.isShowingMenu = false
+            self.enableControllerInput(false)
+        }))
+        actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: { (action) in
+            self.core.setPauseEmulation(false)
+            self.isShowingMenu = false
+            self.enableControllerInput(false)
+        }))
         present(actionSheet, animated: true, completion: { () -> Void in
             PVControllerManager.shared.iCadeController?.refreshListener()
         })
@@ -841,6 +931,22 @@ extension PVEmulatorViewController {
         enableControllerInput(false)
     }
 }
+
+#if os(iOS)
+extension PVEmulatorViewController {
+    override var shouldAutorotate: Bool {
+        return true
+    }
+
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        return orientationMask
+    }
+
+    override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation {
+        return orientation
+    }
+}
+#endif
 
 // Extension to make gesture.allowedPressTypes and gesture.allowedTouchTypes sane.
 extension NSNumber {

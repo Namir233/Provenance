@@ -627,12 +627,6 @@ final class PVGameLibraryViewController: UIViewController, UITextFieldDelegate, 
         }
     }
 
-    #if os(iOS)
-        override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-            return .all
-        }
-    #endif
-
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "SettingsSegue" {
             let settingsVC = (segue.destination as! UINavigationController).topViewController as! PVSettingsViewController
@@ -1650,6 +1644,20 @@ extension PVGameLibraryViewController: GameLibraryCollectionViewDelegate {
         }))
         present(alert, animated: true) { () -> Void in }
     }
+
+    #if os(iOS)
+        override var shouldAutorotate: Bool {
+            return true
+        }
+
+        override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+            return .portrait
+        }
+
+        override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation {
+            return .portrait
+        }
+    #endif
 }
 
 // Helper function inserted by Swift 4.2 migrator.

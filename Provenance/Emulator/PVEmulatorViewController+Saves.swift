@@ -161,11 +161,11 @@ extension PVEmulatorViewController {
             }
 
             do {
-                // Delete the oldest auto-saves over 5 count
+                // Delete the oldest auto-saves over 20 count
                 try realm.write {
                     let autoSaves = self.game.autoSaves
-                    if autoSaves.count > 5 {
-                        autoSaves.suffix(from: 5).forEach {
+                    if autoSaves.count > 20 {
+                        autoSaves.suffix(from: 20).forEach {
                             DLOG("Deleting old auto save of \($0.game.title) dated: \($0.date.description)")
                             realm.delete($0)
                         }

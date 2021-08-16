@@ -181,6 +181,10 @@ extension PVEmulatorViewController {
             }
         }))
 
+        actionSheet.addAction(UIAlertAction(title: "Orientation", style: .default, handler: { action in
+            self.perform(#selector(self.showOrientationMenu), with: nil, afterDelay: 0.1)
+        }))
+
         let lastPlayed = game.lastPlayed ?? Date()
         var shouldSave = PVSettingsModel.shared.autoSave
         shouldSave = shouldSave && abs(lastPlayed.timeIntervalSinceNow) > minimumPlayTimeToMakeAutosave
@@ -200,7 +204,7 @@ extension PVEmulatorViewController {
             }))
         }
 
-        let resumeAction = UIAlertAction(title: "Resume", style: .default, handler: { action in
+        let resumeAction = UIAlertAction(title: "Resume", style: .cancel, handler: { action in
             self.core.setPauseEmulation(false)
             self.isShowingMenu = false
             self.enableControllerInput(false)

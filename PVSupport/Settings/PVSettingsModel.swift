@@ -238,7 +238,7 @@ extension MirroredSettings {
 
     public dynamic var autoSave = true
     public dynamic var timedAutoSaves = true
-    public dynamic var timedAutoSaveInterval = minutes(10)
+    public dynamic var timedAutoSaveInterval = minutes(2)
 
     public dynamic var askToAutoLoad = true
     public dynamic var autoLoadSaves = false
@@ -290,4 +290,6 @@ extension MirroredSettings {
 
     public dynamic var haveWarnedAboutDebug = false
     public dynamic var collapsedSystems = Set<String>()
+
+    public dynamic var orientation = 0xF
 }
