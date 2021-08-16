@@ -78,8 +78,10 @@ final class JSDPad: UIView {
         if (x <= 0) || (x >= bounds.size.width) || (y <= 0) || (y >= bounds.size.height) {
             return .none
         }
-        let column = Int((x / (bounds.size.width / 3)))
-        let row = Int((y / (bounds.size.height / 3)))
+        var column = Int(max(0, min(3, x / (bounds.size.width / 4))))
+        var row = Int(max(0, min(3, y / (bounds.size.height / 4))))
+        column = (column >= 2) ? column - 1 : column
+        row = (row >= 2) ? row - 1 : row
         let direction = JSDPadDirection(rawValue: (row * 3) + column + 1)!
         return direction
     }
