@@ -72,6 +72,7 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
     var batterySavesPath: URL { return PVEmulatorConfiguration.batterySavesPath(forGame: game) }
     var BIOSPath: URL { return PVEmulatorConfiguration.biosPath(forGame: game) }
     var menuButton: MenuButton?
+    var fastButton: MenuButton?
 
     private(set) lazy var glViewController: PVGLViewController = PVGLViewController(emulatorCore: core)
     private(set) lazy var controllerViewController: (UIViewController & StartSelectDelegate)? = PVCoreFactory.controllerViewController(forSystem: game.system, core: core)
@@ -229,6 +230,24 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
         view.addSubview(menuButton!)
     }
 
+    private func initFastButton() {
+        let alpha: CGFloat = CGFloat(PVSettingsModel.shared.controllerOpacity)
+        fastButton = MenuButton(type: .custom)
+        fastButton?.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin, .flexibleBottomMargin]
+        fastButton?.setTitle("1x", for: .normal)
+        fastButton?.setTitle("5x", for: .highlighted)
+        fastButton?.layer.shadowOffset = CGSize(width: 0, height: 1)
+        fastButton?.layer.shadowRadius = 3.0
+        fastButton?.layer.shadowColor = UIColor.black.cgColor
+        fastButton?.layer.shadowOpacity = 0.75
+        fastButton?.tintColor = UIColor.white
+        fastButton?.alpha = alpha
+        fastButton?.addTarget(self, action: #selector(PVEmulatorViewController.setFastSpeed), for: .touchDown)
+        fastButton?.addTarget(self, action: #selector(PVEmulatorViewController.setNormalSpeed), for: .touchDragExit)
+        fastButton?.addTarget(self, action: #selector(PVEmulatorViewController.setNormalSpeed), for: .touchUpInside)
+        view.addSubview(fastButton!)
+    }
+
     private func initFPSLabel() {
         fpsLabel.textColor = UIColor.yellow
         fpsLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -360,6 +379,7 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
         #if os(iOS)
             addControllerOverlay()
             initMenuButton()
+            initFastButton()
         #endif
 
         if PVSettingsModel.shared.showFPSCount {
@@ -483,6 +503,7 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
         super.viewDidLayoutSubviews()
         #if os(iOS)
             layoutMenuButton()
+            layoutFastButton()
         #endif
     }
 
@@ -494,6 +515,14 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
                 menuButton.imageView?.contentMode = .center
                 let frame = CGRect(x: safeAreaInsets.left + 10, y: safeAreaInsets.top + 5, width: width, height: height)
                 menuButton.frame = frame
+            }
+        }
+        func layoutFastButton() {
+            if let fastButton = self.fastButton {
+                let height: CGFloat = 42
+                let width: CGFloat = 42
+                let frame = CGRect(x: (menuButton?.frame.maxX ?? 0) + 10, y: safeAreaInsets.top + 5, width: width, height: height)
+                fastButton.frame = frame
             }
         }
     #endif
@@ -649,6 +678,14 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
         present(actionSheet, animated: true, completion: { () -> Void in
             PVControllerManager.shared.iCadeController?.refreshListener()
         })
+    }
+
+    @objc private func setFastSpeed() {
+        self.core.gameSpeed = .fast
+    }
+
+    @objc private func setNormalSpeed() {
+        self.core.gameSpeed = .normal
     }
 
     @objc func showOrientationMenu() {
