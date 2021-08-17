@@ -20,6 +20,7 @@ FOUNDATION_EXPORT const unsigned char PVSupport_FrameworkVersionString[];
 // In this header, you should import all the public headers of your framework using statements like #import <PVSupport/PublicHeader.h>
 #import <PVSupport/DebugUtils.h>
 #import <PVSupport/PVEmulatorCore.h>
+#import <PVSupport/PVTimer.h>
 #import <PVSupport/PVGameControllerUtilities.h>
 #import <PVSupport/NSObject+PVAbstractAdditions.h>
 #import <PVSupport/NSFileManager+OEHashingAdditions.h>

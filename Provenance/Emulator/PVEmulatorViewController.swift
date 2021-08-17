@@ -114,11 +114,11 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
 
         staticSelf = self
 
-        if PVSettingsModel.shared.autoSave {
-            NSSetUncaughtExceptionHandler(uncaughtExceptionHandler)
-        } else {
-            NSSetUncaughtExceptionHandler(nil)
-        }
+//        if PVSettingsModel.shared.autoSave {
+//            NSSetUncaughtExceptionHandler(uncaughtExceptionHandler)
+//        } else {
+//            NSSetUncaughtExceptionHandler(nil)
+//        }
 
         // Add KVO watcher for isRunning state so we can update play time
         core.addObserver(self, forKeyPath: "isRunning", options: .new, context: nil)
@@ -156,7 +156,7 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
         if audioInited {
             gameAudio.stop()
         }
-        NSSetUncaughtExceptionHandler(nil)
+//        NSSetUncaughtExceptionHandler(nil)
         staticSelf = nil
         glViewController.willMove(toParent: nil)
         glViewController.view?.removeFromSuperview()
@@ -423,7 +423,7 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
         destroyAutosaveTimer()
     }
 
-    var autosaveTimer: Timer?
+    var autosaveTimer: PVTimer?
 
     var gameStartTime: Date?
     @objc

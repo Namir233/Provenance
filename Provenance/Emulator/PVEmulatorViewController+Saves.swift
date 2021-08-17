@@ -52,7 +52,7 @@ extension PVEmulatorViewController {
     func createAutosaveTimer() {
         autosaveTimer?.invalidate()
         let interval = PVSettingsModel.shared.timedAutoSaveInterval
-        autosaveTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true, block: { _ in
+        autosaveTimer = PVTimer.scheduledTimer(withInterval: interval, repeats: true, block: { _ in
             DispatchQueue.main.async {
                 let image = self.captureScreenshot()
                 self.createNewSaveState(auto: true, screenshot: image) { result in

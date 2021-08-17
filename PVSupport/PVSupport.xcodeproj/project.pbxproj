@@ -8,6 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		0592894F1DC194FD0012644D /* RealTimeThread.m in Sources */ = {isa = PBXBuildFile; fileRef = 0592894E1DC194FD0012644D /* RealTimeThread.m */; };
+		1FBC741126CB5D5E005E2498 /* PVTimer.h in Headers */ = {isa = PBXBuildFile; fileRef = 1FBC740F26CB5D5E005E2498 /* PVTimer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		1FBC741226CB5D5E005E2498 /* PVTimer.h in Headers */ = {isa = PBXBuildFile; fileRef = 1FBC740F26CB5D5E005E2498 /* PVTimer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		1FBC741326CB5D5E005E2498 /* PVTimer.m in Sources */ = {isa = PBXBuildFile; fileRef = 1FBC741026CB5D5E005E2498 /* PVTimer.m */; };
+		1FBC741426CB5D5E005E2498 /* PVTimer.m in Sources */ = {isa = PBXBuildFile; fileRef = 1FBC741026CB5D5E005E2498 /* PVTimer.m */; };
 		B302F8A020B73D6500C5E502 /* PVCocoaLumberJackLogging.h in Headers */ = {isa = PBXBuildFile; fileRef = B302F89820B73D5F00C5E502 /* PVCocoaLumberJackLogging.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		B302F8A120B73D6500C5E502 /* PVCocoaLumberJackLogging.h in Headers */ = {isa = PBXBuildFile; fileRef = B302F89820B73D5F00C5E502 /* PVCocoaLumberJackLogging.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		B302F8A320B73D6500C5E502 /* PVLogEntry.m in Sources */ = {isa = PBXBuildFile; fileRef = B302F89920B73D5F00C5E502 /* PVLogEntry.m */; };
@@ -169,6 +173,8 @@
 		1ACEA69617F748F80031B1C9 /* TPCircularBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TPCircularBuffer.h; sourceTree = "<group>"; };
 		1ACEA6A017F74A5A0031B1C9 /* NSObject+PVAbstractAdditions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSObject+PVAbstractAdditions.h"; sourceTree = "<group>"; };
 		1ACEA6A117F74A5A0031B1C9 /* NSObject+PVAbstractAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSObject+PVAbstractAdditions.m"; sourceTree = "<group>"; };
+		1FBC740F26CB5D5E005E2498 /* PVTimer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PVTimer.h; sourceTree = "<group>"; };
+		1FBC741026CB5D5E005E2498 /* PVTimer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PVTimer.m; sourceTree = "<group>"; };
 		B302F89820B73D5F00C5E502 /* PVCocoaLumberJackLogging.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PVCocoaLumberJackLogging.h; sourceTree = "<group>"; };
 		B302F89920B73D5F00C5E502 /* PVLogEntry.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PVLogEntry.m; sourceTree = "<group>"; };
 		B302F89A20B73D6200C5E502 /* PVLogging.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PVLogging.h; sourceTree = "<group>"; };
@@ -471,6 +477,8 @@
 				B3FA5D5F1D6B90BD00060D71 /* PVEmulatorCore.h */,
 				B3FA5D601D6B90BD00060D71 /* PVEmulatorCore.m */,
 				B3A74C8920522B04001D3D2E /* PVEmulatorCore.swift */,
+				1FBC740F26CB5D5E005E2498 /* PVTimer.h */,
+				1FBC741026CB5D5E005E2498 /* PVTimer.m */,
 			);
 			path = EmulatorCore;
 			sourceTree = "<group>";
@@ -497,6 +505,7 @@
 			files = (
 				B34AB8652106F2F200C45F09 /* PVSupport.h in Headers */,
 				B3C96EA81D62C3C3003F1E93 /* OEGameAudio.h in Headers */,
+				1FBC741226CB5D5E005E2498 /* PVTimer.h in Headers */,
 				B3447E89218B7E4B00557ACE /* CAAudioTimeStamp.h in Headers */,
 				B3C96EA71D62C3BE003F1E93 /* DebugUtils.h in Headers */,
 				B3447E93218B7E4B00557ACE /* CARingBuffer.h in Headers */,
@@ -522,6 +531,7 @@
 			files = (
 				B34AB8642106F2F200C45F09 /* PVSupport.h in Headers */,
 				B3C96EC91D62C5E7003F1E93 /* OEGameAudio.h in Headers */,
+				1FBC741126CB5D5E005E2498 /* PVTimer.h in Headers */,
 				B3447E86218B7E4B00557ACE /* CABitOperations.h in Headers */,
 				B3C96ECA1D62C5E7003F1E93 /* DebugUtils.h in Headers */,
 				B302F8A820B73D6500C5E502 /* PVProvenanceLogging.h in Headers */,
@@ -705,6 +715,7 @@
 				B3AB37DD21881869009D9244 /* PViCadeInputAxis.swift in Sources */,
 				B3AB37B421880FA6009D9244 /* iCadeState.swift in Sources */,
 				B3A74C8B20522B04001D3D2E /* PVEmulatorCore.swift in Sources */,
+				1FBC741426CB5D5E005E2498 /* PVTimer.m in Sources */,
 				B3FA5D6A1D6B90BD00060D71 /* PVGameControllerUtilities.m in Sources */,
 				B3CDEEC921D4C4E5000C55F7 /* SaveStateSupport.swift in Sources */,
 				B3AB37E821881B6E009D9244 /* iCadeControllerSetting.swift in Sources */,
@@ -750,6 +761,7 @@
 				B3AB37DC21881869009D9244 /* PViCadeInputAxis.swift in Sources */,
 				B3AB37B321880FA5009D9244 /* iCadeState.swift in Sources */,
 				B34AB57A2106DC6100C45F09 /* CoreOptions.swift in Sources */,
+				1FBC741326CB5D5E005E2498 /* PVTimer.m in Sources */,
 				B34AB5762106DC4C00C45F09 /* UIDeviceExtension.swift in Sources */,
 				B3CDEEC821D4C4E5000C55F7 /* SaveStateSupport.swift in Sources */,
 				B3AB37E721881B6D009D9244 /* iCadeControllerSetting.swift in Sources */,

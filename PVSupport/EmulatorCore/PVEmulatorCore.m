@@ -11,6 +11,7 @@
 #import "OERingBuffer.h"
 #import "RealTimeThread.h"
 #import "PVLogging.h"
+#import "PVTimer.h"
 @import AVFoundation;
 @import UIKit;
 
@@ -227,6 +228,7 @@ NSString *const PVEmulatorCoreErrorDomain = @"org.provenance-emu.EmulatorCore.Er
                         [self executeFrame];
                     }
                 }
+                [PVTimer tickTimers:gameInterval];
             }
         }
         frameCount += 1;
