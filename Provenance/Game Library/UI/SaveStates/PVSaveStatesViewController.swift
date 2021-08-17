@@ -37,6 +37,8 @@ final class PVSaveStatesViewController: UICollectionViewController {
     var saveStates: LinkingObjects<PVSaveState>!
     var screenshot: UIImage?
 
+    var forSave: Bool = false
+
     var coreID: String?
 
     private var autoSaves: Results<PVSaveState>!
@@ -72,7 +74,7 @@ final class PVSaveStatesViewController: UICollectionViewController {
         autoSaves = allSaves.filter("isAutosave == true")
         manualSaves = allSaves.filter("isAutosave == false")
 
-        if screenshot == nil {
+        if screenshot == nil || !forSave {
             navigationItem.rightBarButtonItem = nil
         }
 
@@ -181,13 +183,17 @@ final class PVSaveStatesViewController: UICollectionViewController {
             }
 
             var state: PVSaveState?
-            switch indexPath.section {
-            case 0:
-                state = autoSaves[indexPath.item]
-            case 1:
+            if forSave {
                 state = manualSaves[indexPath.item]
-            default:
-                break
+            } else {
+                switch indexPath.section {
+                case 0:
+                    state = autoSaves[indexPath.item]
+                case 1:
+                    state = manualSaves[indexPath.item]
+                default:
+                    break
+                }
             }
 
             guard let saveState = state else {
@@ -195,19 +201,47 @@ final class PVSaveStatesViewController: UICollectionViewController {
                 return
             }
 
-            let alert = UIAlertController(title: "Delete this save state?", message: nil, preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "Yes", style: .destructive) { [unowned self] _ in
+            if saveState.isAutosave {
+                showDeleteAlert(saveState: saveState)
+            }
+
+            let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+            alert.addAction(UIAlertAction(title: saveState.isLock ? "Unlock" : "Lock", style: .default, handler: { _ in
+                let locked = saveState.isLock
                 do {
-                    try PVSaveState.delete(saveState)
+                    saveState.isLock = !locked
+                    try PVSaveState.update(saveState)
                 } catch {
-                    self.presentError("Error deleting save state: \(error.localizedDescription)")
+                    saveState.isLock = locked
                 }
+            }))
+            let delete = UIAlertAction(title: "Delete", style: .destructive, handler: { _ in
+                self.showDeleteAlert(saveState: saveState)
             })
-            alert.addAction(UIAlertAction(title: "No", style: .cancel, handler: nil))
+            delete.isEnabled = !saveState.isLock
+            alert.addAction(delete)
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
             present(alert, animated: true)
         default:
             break
         }
+    }
+
+    func showDeleteAlert(saveState: PVSaveState) {
+        let alert = UIAlertController(title: "Delete this save state?", message: nil, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Yes", style: .destructive) { [unowned self] _ in
+            if saveState.isLock {
+                self.showLockAlert()
+                return
+            }
+            do {
+                try PVSaveState.delete(saveState)
+            } catch {
+                self.presentError("Error deleting save state: \(error.localizedDescription)")
+            }
+        })
+        alert.addAction(UIAlertAction(title: "No", style: .cancel, handler: nil))
+        self.present(alert, animated: true)
     }
 
     @IBAction func done(_: Any) {
@@ -232,6 +266,10 @@ final class PVSaveStatesViewController: UICollectionViewController {
             self.delegate?.saveStatesViewController(self, load: saveState)
         }))
         alert.addAction(UIAlertAction(title: "Save & Overwrite", style: .default, handler: { (_: UIAlertAction) in
+            if saveState.isLock {
+                self.showLockAlert()
+                return
+            }
             self.delegate?.saveStatesViewControllerOverwriteState(self, state: saveState) { result in
                 switch result {
                 case .success:
@@ -242,6 +280,10 @@ final class PVSaveStatesViewController: UICollectionViewController {
             }
         }))
         alert.addAction(UIAlertAction(title: "Delete", style: .destructive, handler: { (_: UIAlertAction) in
+            if saveState.isLock {
+                self.showLockAlert()
+                return
+            }
             do {
                 try PVSaveState.delete(saveState)
             } catch {
@@ -252,12 +294,22 @@ final class PVSaveStatesViewController: UICollectionViewController {
         present(alert, animated: true)
     }
 
+    func showLockAlert() {
+        let alert = UIAlertController(title: nil, message: "State is locked.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        present(alert, animated: true)
+    }
+
     override func numberOfSections(in _: UICollectionView) -> Int {
-        return 2
+        return forSave ? 1 : 2
     }
 
     override func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
         let reusableView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: "SaveStateHeader", for: indexPath) as! PVSaveStateHeaderView
+        if forSave {
+            reusableView.label.text = "Save States"
+            return reusableView
+        }
         switch indexPath.section {
         case 0:
             reusableView.label.text = "Auto Save"
@@ -271,6 +323,9 @@ final class PVSaveStatesViewController: UICollectionViewController {
     }
 
     override func collectionView(_: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        if forSave {
+            return manualSaves.count
+        }
         switch section {
         case 0:
             return autoSaves.count
@@ -284,13 +339,17 @@ final class PVSaveStatesViewController: UICollectionViewController {
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "SaveStateView", for: indexPath) as! PVSaveStateCollectionViewCell
         var saveState: PVSaveState?
-        switch indexPath.section {
-        case 0:
-            saveState = autoSaves[indexPath.item]
-        case 1:
+        if forSave {
             saveState = manualSaves[indexPath.item]
-        default:
-            break
+        } else {
+            switch indexPath.section {
+            case 0:
+                saveState = autoSaves[indexPath.item]
+            case 1:
+                saveState = manualSaves[indexPath.item]
+            default:
+                break
+            }
         }
 
         cell.saveState = saveState
@@ -299,6 +358,23 @@ final class PVSaveStatesViewController: UICollectionViewController {
     }
 
     override func collectionView(_: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        if forSave {
+            var saveState: PVSaveState?
+            saveState = manualSaves[indexPath.item]
+            guard let state = saveState else {
+                ELOG("No save state at indexPath: \(indexPath)")
+                return
+            }
+            delegate?.saveStatesViewControllerOverwriteState(self, state: state) { result in
+                switch result {
+                case .success:
+                    break
+                case let .error(error):
+                    self.presentError("Error overwriting save state: \(error.localizedDescription)")
+                }
+            }
+            return
+        }
         switch indexPath.section {
         case 0:
             let saveState = autoSaves[indexPath.item]
@@ -310,7 +386,11 @@ final class PVSaveStatesViewController: UICollectionViewController {
                 ELOG("No save state at indexPath: \(indexPath)")
                 return
             }
-            showSaveStateOptions(saveState: state)
+            if state.isLock {
+                showLockAlert()
+            } else {
+                delegate?.saveStatesViewController(self, load: state)
+            }
         default:
             break
         }

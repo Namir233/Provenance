@@ -264,7 +264,15 @@ extension PVEmulatorViewController {
         loadSaveState(state)
     }
 
-    @objc func showSaveStateMenu() {
+    @objc func showSaveStateLoadMenu() {
+        showSaveStateMenu(forSave: false)
+    }
+
+    @objc func showSaveStateWriteMenu() {
+        showSaveStateMenu(forSave: true)
+    }
+    
+    func showSaveStateMenu(forSave: Bool) {
         guard let saveStatesNavController = UIStoryboard(name: "SaveStates", bundle: nil).instantiateViewController(withIdentifier: "PVSaveStatesViewControllerNav") as? UINavigationController else {
             return
         }
@@ -275,6 +283,7 @@ extension PVEmulatorViewController {
             saveStatesViewController.saveStates = game.saveStates
             saveStatesViewController.delegate = self
             saveStatesViewController.screenshot = image
+            saveStatesViewController.forSave = forSave
             saveStatesViewController.coreID = core.coreIdentifier
         }
 

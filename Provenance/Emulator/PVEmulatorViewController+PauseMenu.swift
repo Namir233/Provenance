@@ -148,8 +148,13 @@ extension PVEmulatorViewController {
             self.perform(#selector(self.showSpeedMenu), with: nil, afterDelay: 0.1)
         }))
         if core.supportsSaveStates {
+            actionSheet.addAction(UIAlertAction(title: "Load States", style: .default, handler: { action in
+                self.perform(#selector(self.showSaveStateLoadMenu), with: nil, afterDelay: 0.1)
+            }))
+        }
+        if core.supportsSaveStates {
             actionSheet.addAction(UIAlertAction(title: "Save States", style: .default, handler: { action in
-                self.perform(#selector(self.showSaveStateMenu), with: nil, afterDelay: 0.1)
+                self.perform(#selector(self.showSaveStateWriteMenu), with: nil, afterDelay: 0.1)
             }))
         }
         if let gameWithCheat = core as? GameWithCheat,

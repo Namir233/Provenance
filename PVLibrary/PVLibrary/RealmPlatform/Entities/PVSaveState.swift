@@ -30,15 +30,17 @@ public final class PVSaveState: Object, Filed, LocalFileProvider {
     public dynamic var lastOpened: Date?
     public dynamic var image: PVImageFile?
     public dynamic var isAutosave: Bool = false
+    public dynamic var isLock: Bool = false
 
     public dynamic var createdWithCoreVersion: String!
 
-    public convenience init(withGame game: PVGame, core: PVCore, file: PVFile, image: PVImageFile? = nil, isAutosave: Bool = false) {
+    public convenience init(withGame game: PVGame, core: PVCore, file: PVFile, image: PVImageFile? = nil, isAutosave: Bool = false, isLock: Bool = false) {
         self.init()
         self.game = game
         self.file = file
         self.image = image
         self.isAutosave = isAutosave
+        self.isLock = isLock
         self.core = core
         createdWithCoreVersion = core.projectVersion
     }
@@ -58,6 +60,16 @@ public final class PVSaveState: Object, Filed, LocalFileProvider {
             }
         } catch {
             ELOG("Failed to delete PVState")
+            throw error
+        }
+    }
+
+    public class func update(_ state: PVSaveState) throws {
+        do {
+            let database = RomDatabase.sharedInstance
+            try database.add(state, update: true)
+        } catch {
+            ELOG("Failed to update PVState")
             throw error
         }
     }
@@ -97,6 +109,7 @@ private extension SaveState {
             image = nil
         }
         isAutosave = saveState.isAutosave
+        isLock = saveState.isLock
     }
 }
 
@@ -136,6 +149,7 @@ extension SaveState: RealmRepresentable {
                 object.image = PVImageFile(withURL: imagePath)
             }
             object.isAutosave = isAutosave
+            object.isLock = isLock
         }
     }
 }
