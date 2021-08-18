@@ -140,8 +140,7 @@ final class PVSaveStatesViewController: UICollectionViewController {
                     return
                 }
                 let fromItem = { (item: Int) -> IndexPath in
-                    let section = 1
-                    return IndexPath(item: item, section: section)
+                    return IndexPath(item: item, section: self.forSave ? 0 : 1)
                 }
                 self.collectionView?.performBatchUpdates({
                     self.collectionView?.deleteItems(at: deletions.map(fromItem))
@@ -207,12 +206,12 @@ final class PVSaveStatesViewController: UICollectionViewController {
 
             let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
             alert.addAction(UIAlertAction(title: saveState.isLock ? "Unlock" : "Lock", style: .default, handler: { _ in
-                let locked = saveState.isLock
                 do {
-                    saveState.isLock = !locked
-                    try PVSaveState.update(saveState)
+                    try RomDatabase.sharedInstance.writeTransaction {
+                        saveState.isLock = !saveState.isLock
+                    }
                 } catch {
-                    saveState.isLock = locked
+                    self.presentError("\(error.localizedDescription)")
                 }
             }))
             let delete = UIAlertAction(title: "Delete", style: .destructive, handler: { _ in

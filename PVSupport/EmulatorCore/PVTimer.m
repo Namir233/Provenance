@@ -50,13 +50,16 @@ static void compactGlobalTimers() {
 }
 
 + (void)tickTimers:(NSTimeInterval)time {
-    for (PVTimer *timer in GlobalTimers) {
-        [timer tick:time];
+    for (_PVWeakTimer *timer in GlobalTimers) {
+        [timer.p tick:time];
     }
 }
 
 + (PVTimer *)scheduledTimerWithInterval:(NSTimeInterval)interval repeats:(BOOL)repeats block:(PVTimerBlock)block {
     PVTimer *timer = [[self alloc] initWithInterval:interval repeats:repeats block:block];
+    if (!GlobalTimers) {
+        GlobalTimers = [NSMutableArray array];
+    }
     [GlobalTimers addObject:[[_PVWeakTimer alloc] initWithTimer:timer]];
     return timer;
 }
