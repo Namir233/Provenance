@@ -84,8 +84,8 @@ final class JSDPad: UIView {
         if pd < 0.04 {
             return .none
         }
-        let t1 = (py == 0) ? 1000000 : px / abs(py)
-        let t2 = (px == 0) ? 1000000 : py / abs(px)
+        let t1 = (py == 0) ? px * 1000000 : px / abs(py)
+        let t2 = (px == 0) ? py * 1000000 : py / abs(px)
         let column = t1 < -0.67 ? 0 : t1 > 0.67 ? 2 : 1
         let row = t2 < -0.67 ? 0 : t2 > 0.67 ? 2 : 1
         let direction = JSDPadDirection(rawValue: (row * 3) + column + 1)!
