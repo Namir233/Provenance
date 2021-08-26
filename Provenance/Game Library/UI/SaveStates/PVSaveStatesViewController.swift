@@ -226,6 +226,22 @@ final class PVSaveStatesViewController: UICollectionViewController {
         }
     }
 
+    func showSaveOverrideAlert(saveState: PVSaveState) {
+        let alert = UIAlertController(title: "Override this save state?", message: nil, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Yes", style: .destructive) { [unowned self] _ in
+            self.delegate?.saveStatesViewControllerOverwriteState(self, state: saveState) { result in
+                switch result {
+                case .success:
+                    break
+                case let .error(error):
+                    self.presentError("Error overwriting save state: \(error.localizedDescription)")
+                }
+            }
+        })
+        alert.addAction(UIAlertAction(title: "No", style: .cancel, handler: nil))
+        self.present(alert, animated: true)
+    }
+
     func showDeleteAlert(saveState: PVSaveState) {
         let alert = UIAlertController(title: "Delete this save state?", message: nil, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Yes", style: .destructive) { [unowned self] _ in
@@ -364,14 +380,7 @@ final class PVSaveStatesViewController: UICollectionViewController {
                 ELOG("No save state at indexPath: \(indexPath)")
                 return
             }
-            delegate?.saveStatesViewControllerOverwriteState(self, state: state) { result in
-                switch result {
-                case .success:
-                    break
-                case let .error(error):
-                    self.presentError("Error overwriting save state: \(error.localizedDescription)")
-                }
-            }
+            showSaveOverrideAlert(saveState: state)
             return
         }
         switch indexPath.section {
