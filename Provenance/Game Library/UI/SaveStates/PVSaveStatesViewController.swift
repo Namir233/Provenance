@@ -380,7 +380,11 @@ final class PVSaveStatesViewController: UICollectionViewController {
                 ELOG("No save state at indexPath: \(indexPath)")
                 return
             }
-            showSaveOverrideAlert(saveState: state)
+            if state.isLock {
+                showLockAlert()
+            } else {
+                showSaveOverrideAlert(saveState: state)
+            }
             return
         }
         switch indexPath.section {
@@ -394,11 +398,7 @@ final class PVSaveStatesViewController: UICollectionViewController {
                 ELOG("No save state at indexPath: \(indexPath)")
                 return
             }
-            if state.isLock {
-                showLockAlert()
-            } else {
-                delegate?.saveStatesViewController(self, load: state)
-            }
+            delegate?.saveStatesViewController(self, load: state)
         default:
             break
         }
