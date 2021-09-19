@@ -31,6 +31,7 @@ struct SaveSection {
 final class PVSaveStatesViewController: UICollectionViewController {
     private var autoSaveStatesObserverToken: NotificationToken!
     private var manualSaveStatesObserverToken: NotificationToken!
+    private var fastSaveStatesObserverToken: NotificationToken!
 
     weak var delegate: PVSaveStatesViewControllerDelegate?
 
@@ -43,12 +44,15 @@ final class PVSaveStatesViewController: UICollectionViewController {
 
     private var autoSaves: Results<PVSaveState>!
     private var manualSaves: Results<PVSaveState>!
+    private var fastSaves: Results<PVSaveState>!
 
     deinit {
         autoSaveStatesObserverToken.invalidate()
         autoSaveStatesObserverToken = nil
         manualSaveStatesObserverToken.invalidate()
         manualSaveStatesObserverToken = nil
+        fastSaveStatesObserverToken.invalidate()
+        fastSaveStatesObserverToken = nil
     }
 
     override func viewDidLoad() {
@@ -71,8 +75,9 @@ final class PVSaveStatesViewController: UICollectionViewController {
             allSaves = saveStates.sorted(byKeyPath: "date", ascending: false)
         }
 
-        autoSaves = allSaves.filter("isAutosave == true")
-        manualSaves = allSaves.filter("isAutosave == false")
+        autoSaves = allSaves.filter("flag == 2")
+        manualSaves = allSaves.filter("flag <= 1")
+        fastSaves = allSaves.filter("flag == 4")
 
         if screenshot == nil || !forSave {
             navigationItem.rightBarButtonItem = nil
@@ -118,8 +123,7 @@ final class PVSaveStatesViewController: UICollectionViewController {
                 }
 
                 let fromItem = { (item: Int) -> IndexPath in
-                    let section = 0
-                    return IndexPath(item: item, section: section)
+                    return IndexPath(item: item, section: 1)
                 }
                 self.collectionView?.performBatchUpdates({
                     self.collectionView?.deleteItems(at: deletions.map(fromItem))
@@ -140,7 +144,29 @@ final class PVSaveStatesViewController: UICollectionViewController {
                     return
                 }
                 let fromItem = { (item: Int) -> IndexPath in
-                    return IndexPath(item: item, section: self.forSave ? 0 : 1)
+                    return IndexPath(item: item, section: 0)
+                }
+                self.collectionView?.performBatchUpdates({
+                    self.collectionView?.deleteItems(at: deletions.map(fromItem))
+                    self.collectionView?.insertItems(at: insertions.map(fromItem))
+                }, completion: nil)
+            case let .error(error):
+                ELOG("Error updating save states: " + error.localizedDescription)
+            }
+        }
+
+        fastSaveStatesObserverToken = fastSaves.observe { [weak self] (changes: RealmCollectionChange) in
+            guard let `self` = self else { return }
+
+            switch changes {
+            case .initial:
+                self.collectionView?.reloadData()
+            case .update(_, let deletions, let insertions, _):
+                guard !deletions.isEmpty || !insertions.isEmpty else {
+                    return
+                }
+                let fromItem = { (item: Int) -> IndexPath in
+                    return IndexPath(item: item, section: 2)
                 }
                 self.collectionView?.performBatchUpdates({
                     self.collectionView?.deleteItems(at: deletions.map(fromItem))
@@ -182,17 +208,15 @@ final class PVSaveStatesViewController: UICollectionViewController {
             }
 
             var state: PVSaveState?
-            if forSave {
+            switch indexPath.section {
+            case 0:
                 state = manualSaves[indexPath.item]
-            } else {
-                switch indexPath.section {
-                case 0:
-                    state = autoSaves[indexPath.item]
-                case 1:
-                    state = manualSaves[indexPath.item]
-                default:
-                    break
-                }
+            case 1:
+                state = autoSaves[indexPath.item]
+            case 2:
+                state = fastSaves[indexPath.item]
+            default:
+                break
             }
 
             guard let saveState = state else {
@@ -200,15 +224,15 @@ final class PVSaveStatesViewController: UICollectionViewController {
                 return
             }
 
-            if saveState.isAutosave {
+            if saveState.flag == SaveStateFlagAuto {
                 showDeleteAlert(saveState: saveState)
             }
 
             let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-            alert.addAction(UIAlertAction(title: saveState.isLock ? "Unlock" : "Lock", style: .default, handler: { _ in
+            alert.addAction(UIAlertAction(title: saveState.flag == SaveStateFlagLockManual ? "Unlock" : "Lock", style: .default, handler: { _ in
                 do {
                     try RomDatabase.sharedInstance.writeTransaction {
-                        saveState.isLock = !saveState.isLock
+                        saveState.flag = saveState.flag == SaveStateFlagLockManual ? SaveStateFlagManual : SaveStateFlagLockManual
                     }
                 } catch {
                     self.presentError("\(error.localizedDescription)")
@@ -217,7 +241,7 @@ final class PVSaveStatesViewController: UICollectionViewController {
             let delete = UIAlertAction(title: "Delete", style: .destructive, handler: { _ in
                 self.showDeleteAlert(saveState: saveState)
             })
-            delete.isEnabled = !saveState.isLock
+            delete.isEnabled = saveState.flag != SaveStateFlagLockManual
             alert.addAction(delete)
             alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
             present(alert, animated: true)
@@ -229,6 +253,7 @@ final class PVSaveStatesViewController: UICollectionViewController {
     func showSaveOverrideAlert(saveState: PVSaveState) {
         let alert = UIAlertController(title: "Override this save state?", message: nil, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Yes", style: .destructive) { [unowned self] _ in
+            PVTimer.resetTick()
             self.delegate?.saveStatesViewControllerOverwriteState(self, state: saveState) { result in
                 switch result {
                 case .success:
@@ -245,7 +270,7 @@ final class PVSaveStatesViewController: UICollectionViewController {
     func showDeleteAlert(saveState: PVSaveState) {
         let alert = UIAlertController(title: "Delete this save state?", message: nil, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Yes", style: .destructive) { [unowned self] _ in
-            if saveState.isLock {
+            if saveState.flag == SaveStateFlagLockManual {
                 self.showLockAlert()
                 return
             }
@@ -281,7 +306,7 @@ final class PVSaveStatesViewController: UICollectionViewController {
             self.delegate?.saveStatesViewController(self, load: saveState)
         }))
         alert.addAction(UIAlertAction(title: "Save & Overwrite", style: .default, handler: { (_: UIAlertAction) in
-            if saveState.isLock {
+            if saveState.flag == SaveStateFlagLockManual {
                 self.showLockAlert()
                 return
             }
@@ -295,7 +320,7 @@ final class PVSaveStatesViewController: UICollectionViewController {
             }
         }))
         alert.addAction(UIAlertAction(title: "Delete", style: .destructive, handler: { (_: UIAlertAction) in
-            if saveState.isLock {
+            if saveState.flag == SaveStateFlagLockManual {
                 self.showLockAlert()
                 return
             }
@@ -316,20 +341,18 @@ final class PVSaveStatesViewController: UICollectionViewController {
     }
 
     override func numberOfSections(in _: UICollectionView) -> Int {
-        return forSave ? 1 : 2
+        return forSave ? 1 : 3
     }
 
     override func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
         let reusableView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: "SaveStateHeader", for: indexPath) as! PVSaveStateHeaderView
-        if forSave {
-            reusableView.label.text = "Save States"
-            return reusableView
-        }
         switch indexPath.section {
         case 0:
-            reusableView.label.text = "Auto Save"
-        case 1:
             reusableView.label.text = "Save States"
+        case 1:
+            reusableView.label.text = "Auto Save"
+        case 2:
+            reusableView.label.text = "Fast Save"
         default:
             break
         }
@@ -338,14 +361,13 @@ final class PVSaveStatesViewController: UICollectionViewController {
     }
 
     override func collectionView(_: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        if forSave {
-            return manualSaves.count
-        }
         switch section {
         case 0:
-            return autoSaves.count
-        case 1:
             return manualSaves.count
+        case 1:
+            return autoSaves.count
+        case 2:
+            return fastSaves.count
         default:
             return 0
         }
@@ -354,17 +376,15 @@ final class PVSaveStatesViewController: UICollectionViewController {
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "SaveStateView", for: indexPath) as! PVSaveStateCollectionViewCell
         var saveState: PVSaveState?
-        if forSave {
+        switch indexPath.section {
+        case 0:
             saveState = manualSaves[indexPath.item]
-        } else {
-            switch indexPath.section {
-            case 0:
-                saveState = autoSaves[indexPath.item]
-            case 1:
-                saveState = manualSaves[indexPath.item]
-            default:
-                break
-            }
+        case 1:
+            saveState = autoSaves[indexPath.item]
+        case 2:
+            saveState = fastSaves[indexPath.item]
+        default:
+            break
         }
 
         cell.saveState = saveState
@@ -380,18 +400,16 @@ final class PVSaveStatesViewController: UICollectionViewController {
                 ELOG("No save state at indexPath: \(indexPath)")
                 return
             }
-            if state.isLock {
+            if state.flag == SaveStateFlagLockManual {
                 showLockAlert()
             } else {
                 showSaveOverrideAlert(saveState: state)
             }
             return
         }
+        PVTimer.resetTick()
         switch indexPath.section {
         case 0:
-            let saveState = autoSaves[indexPath.item]
-            delegate?.saveStatesViewController(self, load: saveState)
-        case 1:
             var saveState: PVSaveState?
             saveState = manualSaves[indexPath.item]
             guard let state = saveState else {
@@ -399,6 +417,12 @@ final class PVSaveStatesViewController: UICollectionViewController {
                 return
             }
             delegate?.saveStatesViewController(self, load: state)
+        case 1:
+            let saveState = autoSaves[indexPath.item]
+            delegate?.saveStatesViewController(self, load: saveState)
+        case 2:
+            let saveState = fastSaves[indexPath.item]
+            delegate?.saveStatesViewController(self, load: saveState)
         default:
             break
         }

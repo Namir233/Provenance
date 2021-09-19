@@ -105,7 +105,7 @@ final class PVSaveStateInfoViewController: UIViewController, GameLaunchingViewCo
             lastPlayedLabel.text = "Never"
         }
 
-        autosaveLabel.text = saveState.isAutosave ? "Yes" : "No"
+        autosaveLabel.text = saveState.flag == SaveStateFlagAuto ? "Yes" : "No"
     }
 
     @IBAction func playButtonTapped(_ sender: Any) {

@@ -55,7 +55,7 @@ extension PVEmulatorViewController {
         autosaveTimer = PVTimer.scheduledTimer(withInterval: interval, repeats: true, block: { _ in
             DispatchQueue.main.async {
                 let image = self.captureScreenshot()
-                self.createNewSaveState(auto: true, screenshot: image) { result in
+                self.createNewSaveState(flag: SaveStateFlagAuto, screenshot: image) { result in
                     switch result {
                     case .success: break
                     case let .error(error):
@@ -92,11 +92,22 @@ extension PVEmulatorViewController {
         }
 
         let image = captureScreenshot()
-        createNewSaveState(auto: true, screenshot: image, completion: completion)
+        createNewSaveState(flag: SaveStateFlagAuto, screenshot: image, completion: completion)
+    }
+
+    func fastSaveState(completion: @escaping SaveCompletion) {
+        guard core.supportsSaveStates else {
+            WLOG("Core \(core.description) doesn't support save states.")
+            completion(.error(.saveStatesUnsupportedByCore))
+            return
+        }
+
+        let image = captureScreenshot()
+        createNewSaveState(flag: SaveStateFlagFast, screenshot: image, completion: completion)
     }
 
     //    #error ("Use to https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/FileSystemProgrammingGuide/iCloud/iCloud.html to save files to iCloud from local url, and setup packages for bundles")
-    func createNewSaveState(auto: Bool, screenshot: UIImage?, completion: @escaping SaveCompletion) {
+    func createNewSaveState(flag: Int, screenshot: UIImage?, completion: @escaping SaveCompletion) {
         guard core.supportsSaveStates else {
             WLOG("Core \(core.description) doesn't support save states.")
             completion(.error(.saveStatesUnsupportedByCore))
@@ -132,7 +143,7 @@ extension PVEmulatorViewController {
                 return
             }
 
-            DLOG("Succeeded saving state, auto: \(auto)")
+            DLOG("Succeeded saving state, flag: \(flag)")
             let realm = try! Realm()
             guard let core = realm.object(ofType: PVCore.self, forPrimaryKey: self.core.coreIdentifier) else {
                 completion(.error(.noCoreFound(self.core.coreIdentifier ?? "nil")))
@@ -143,7 +154,7 @@ extension PVEmulatorViewController {
                 var saveState: PVSaveState!
 
                 try realm.write {
-                    saveState = PVSaveState(withGame: self.game, core: core, file: saveFile, image: imageFile, isAutosave: auto)
+                    saveState = PVSaveState(withGame: self.game, core: core, file: saveFile, image: imageFile, flag: flag)
                     realm.add(saveState)
                 }
 
@@ -160,20 +171,40 @@ extension PVEmulatorViewController {
                 return
             }
 
-            do {
-                // Delete the oldest auto-saves over 20 count
-                try realm.write {
-                    let autoSaves = self.game.autoSaves
-                    if autoSaves.count > 20 {
-                        autoSaves.suffix(from: 20).forEach {
-                            DLOG("Deleting old auto save of \($0.game.title) dated: \($0.date.description)")
-                            realm.delete($0)
+            if (flag == SaveStateFlagAuto) {
+                do {
+                    // Delete the oldest auto-saves over 20 count
+                    try realm.write {
+                        let autoSaves = self.game.autoSaves
+                        if autoSaves.count > 20 {
+                            autoSaves.suffix(from: 20).forEach {
+                                DLOG("Deleting old auto save of \($0.game.title) dated: \($0.date.description)")
+                                realm.delete($0)
+                            }
                         }
                     }
+                } catch {
+                    completion(.error(.realmDeletionError(error)))
+                    return
                 }
-            } catch {
-                completion(.error(.realmDeletionError(error)))
-                return
+            }
+
+            if (flag == SaveStateFlagFast) {
+                do {
+                    // Delete the oldest auto-saves over 20 count
+                    try realm.write {
+                        let fastSaves = self.game.fastSaves
+                        if fastSaves.count > 4 {
+                            fastSaves.suffix(from: 4).forEach {
+                                DLOG("Deleting old auto save of \($0.game.title) dated: \($0.date.description)")
+                                realm.delete($0)
+                            }
+                        }
+                    }
+                } catch {
+                    completion(.error(.realmDeletionError(error)))
+                    return
+                }
             }
 
             // All done successfully
@@ -240,11 +271,11 @@ extension PVEmulatorViewController {
     }
 
     func saveStatesViewControllerCreateNewState(_ saveStatesViewController: PVSaveStatesViewController, completion: @escaping SaveCompletion) {
-        createNewSaveState(auto: false, screenshot: saveStatesViewController.screenshot, completion: completion)
+        createNewSaveState(flag: SaveStateFlagManual, screenshot: saveStatesViewController.screenshot, completion: completion)
     }
 
     func saveStatesViewControllerOverwriteState(_ saveStatesViewController: PVSaveStatesViewController, state: PVSaveState, completion: @escaping SaveCompletion) {
-        createNewSaveState(auto: false, screenshot: saveStatesViewController.screenshot) { result in
+        createNewSaveState(flag: SaveStateFlagManual, screenshot: saveStatesViewController.screenshot) { result in
             switch result {
             case .success:
                 do {
@@ -331,7 +362,7 @@ extension PVEmulatorViewController {
                 let newURL = saveStatePath.appendingPathComponent("\(game.md5Hash).\(Date().timeIntervalSinceReferenceDate)")
                 try fileManager.moveItem(at: autoSaveURL, to: newURL)
                 let saveFile = PVFile(withURL: newURL)
-                let newState = PVSaveState(withGame: game, core: core, file: saveFile, image: nil, isAutosave: true)
+                let newState = PVSaveState(withGame: game, core: core, file: saveFile, image: nil, flag: SaveStateFlagAuto)
                 try realm.write {
                     realm.add(newState)
                 }
@@ -351,7 +382,7 @@ extension PVEmulatorViewController {
                     let newURL = saveStatePath.appendingPathComponent("\(game.md5Hash).\(Date().timeIntervalSinceReferenceDate)")
                     try fileManager.moveItem(at: url, to: newURL)
                     let saveFile = PVFile(withURL: newURL)
-                    let newState = PVSaveState(withGame: game, core: core, file: saveFile, image: nil, isAutosave: false)
+                    let newState = PVSaveState(withGame: game, core: core, file: saveFile, image: nil, flag: SaveStateFlagManual)
                     try realm.write {
                         realm.add(newState)
                     }

@@ -73,6 +73,8 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
     var BIOSPath: URL { return PVEmulatorConfiguration.biosPath(forGame: game) }
     var menuButton: MenuButton?
     var fastButton: MenuButton?
+    var fastLoadButton: MenuButton?
+    var fastSaveButton: MenuButton?
 
     private(set) lazy var glViewController: PVGLViewController = PVGLViewController(emulatorCore: core)
     private(set) lazy var controllerViewController: (UIViewController & StartSelectDelegate)? = PVCoreFactory.controllerViewController(forSystem: game.system, core: core)
@@ -248,6 +250,36 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
         view.addSubview(fastButton!)
     }
 
+    private func initFastLoadButton() {
+        let alpha: CGFloat = CGFloat(PVSettingsModel.shared.controllerOpacity)
+        fastLoadButton = MenuButton(type: .custom)
+        fastLoadButton?.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin, .flexibleBottomMargin]
+        fastLoadButton?.setTitle("Ld", for: .normal)
+        fastLoadButton?.layer.shadowOffset = CGSize(width: 0, height: 1)
+        fastLoadButton?.layer.shadowRadius = 3.0
+        fastLoadButton?.layer.shadowColor = UIColor.black.cgColor
+        fastLoadButton?.layer.shadowOpacity = 0.75
+        fastLoadButton?.tintColor = UIColor.white
+        fastLoadButton?.alpha = alpha
+        fastLoadButton?.addTarget(self, action: #selector(PVEmulatorViewController.fastLoad), for: .touchUpInside)
+        view.addSubview(fastLoadButton!)
+    }
+
+    private func initFastSaveButton() {
+        let alpha: CGFloat = CGFloat(PVSettingsModel.shared.controllerOpacity)
+        fastSaveButton = MenuButton(type: .custom)
+        fastSaveButton?.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin, .flexibleBottomMargin]
+        fastSaveButton?.setTitle("Sv", for: .normal)
+        fastSaveButton?.layer.shadowOffset = CGSize(width: 0, height: 1)
+        fastSaveButton?.layer.shadowRadius = 3.0
+        fastSaveButton?.layer.shadowColor = UIColor.black.cgColor
+        fastSaveButton?.layer.shadowOpacity = 0.75
+        fastSaveButton?.tintColor = UIColor.white
+        fastSaveButton?.alpha = alpha
+        fastSaveButton?.addTarget(self, action: #selector(PVEmulatorViewController.fastSave), for: .touchUpInside)
+        view.addSubview(fastSaveButton!)
+    }
+
     private func initFPSLabel() {
         fpsLabel.textColor = UIColor.yellow
         fpsLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -380,6 +412,8 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
             addControllerOverlay()
             initMenuButton()
             initFastButton()
+            initFastLoadButton()
+            initFastSaveButton()
         #endif
 
         if PVSettingsModel.shared.showFPSCount {
@@ -504,6 +538,8 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
         #if os(iOS)
             layoutMenuButton()
             layoutFastButton()
+            layoutFastSaveButton()
+            layoutFastLoadButton()
         #endif
     }
 
@@ -523,6 +559,22 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
                 let width: CGFloat = 42
                 let frame = CGRect(x: (menuButton?.frame.maxX ?? 0) + 10, y: safeAreaInsets.top + 5, width: width, height: height)
                 fastButton.frame = frame
+            }
+        }
+        func layoutFastSaveButton() {
+            if let fastSaveButton = self.fastSaveButton {
+                let height: CGFloat = 42
+                let width: CGFloat = 42
+                let frame = CGRect(x: view.bounds.maxX - safeAreaInsets.right - 10 - width, y: safeAreaInsets.top + 5, width: width, height: height)
+                fastSaveButton.frame = frame
+            }
+        }
+        func layoutFastLoadButton() {
+            if let fastLoadButton = self.fastLoadButton {
+                let height: CGFloat = 42
+                let width: CGFloat = 42
+                let frame = CGRect(x: (fastSaveButton?.frame.minX ?? 0) - 10 - width, y: safeAreaInsets.top + 5, width: width, height: height)
+                fastLoadButton.frame = frame
             }
         }
     #endif
@@ -686,6 +738,23 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
 
     @objc private func setNormalSpeed() {
         self.core.gameSpeed = .normal
+    }
+
+    @objc private func fastLoad() {
+        if let state = game.newestFastSave {
+            loadSaveState(state)
+        }
+    }
+
+    @objc private func fastSave() {
+        fastSaveState { result in
+            switch result {
+            case .success:
+                break
+            case let .error(error):
+                ELOG(error.localizedDescription)
+            }
+        }
     }
 
     @objc func showOrientationMenu() {

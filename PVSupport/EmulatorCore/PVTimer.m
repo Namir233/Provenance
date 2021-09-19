@@ -55,6 +55,12 @@ static void compactGlobalTimers() {
     }
 }
 
++ (void)resetTick {
+    for (_PVWeakTimer *timer in GlobalTimers) {
+        [timer.p resetTick];
+    }
+}
+
 + (PVTimer *)scheduledTimerWithInterval:(NSTimeInterval)interval repeats:(BOOL)repeats block:(PVTimerBlock)block {
     PVTimer *timer = [[self alloc] initWithInterval:interval repeats:repeats block:block];
     if (!GlobalTimers) {
@@ -90,6 +96,10 @@ static void compactGlobalTimers() {
             [self invalidate];
         }
     }
+}
+
+- (void)resetTick {
+    _time = 0;
 }
 
 - (void)invalidate {

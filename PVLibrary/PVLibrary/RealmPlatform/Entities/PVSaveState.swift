@@ -29,18 +29,16 @@ public final class PVSaveState: Object, Filed, LocalFileProvider {
     public dynamic var date: Date = Date()
     public dynamic var lastOpened: Date?
     public dynamic var image: PVImageFile?
-    public dynamic var isAutosave: Bool = false
-    public dynamic var isLock: Bool = false
+    public dynamic var flag: Int = SaveStateFlagManual
 
     public dynamic var createdWithCoreVersion: String!
 
-    public convenience init(withGame game: PVGame, core: PVCore, file: PVFile, image: PVImageFile? = nil, isAutosave: Bool = false, isLock: Bool = false) {
+    public convenience init(withGame game: PVGame, core: PVCore, file: PVFile, image: PVImageFile? = nil, flag: Int = 0) {
         self.init()
         self.game = game
         self.file = file
         self.image = image
-        self.isAutosave = isAutosave
-        self.isLock = isLock
+        self.flag = flag
         self.core = core
         createdWithCoreVersion = core.projectVersion
     }
@@ -75,7 +73,7 @@ public final class PVSaveState: Object, Filed, LocalFileProvider {
     }
 
     public dynamic var isNewestAutosave: Bool {
-        guard isAutosave, let game = game, let newestSave = game.autoSaves.first else {
+        guard flag == SaveStateFlagAuto, let game = game, let newestSave = game.autoSaves.first else {
             return false
         }
 
@@ -108,8 +106,7 @@ private extension SaveState {
         } else {
             image = nil
         }
-        isAutosave = saveState.isAutosave
-        isLock = saveState.isLock
+        flag = saveState.flag
     }
 }
 
@@ -148,8 +145,7 @@ extension SaveState: RealmRepresentable {
                 DLOG("path: \(imagePath)")
                 object.image = PVImageFile(withURL: imagePath)
             }
-            object.isAutosave = isAutosave
-            object.isLock = isLock
+            object.flag = flag
         }
     }
 }

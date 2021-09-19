@@ -17,7 +17,9 @@ typedef void(^PVTimerBlock)(PVTimer *);
 
 + (void)tickTimers:(NSTimeInterval)time;
 + (instancetype)scheduledTimerWithInterval:(NSTimeInterval)interval repeats:(BOOL)repeats block:(PVTimerBlock)block;
++ (void)resetTick;
 - (instancetype)initWithInterval:(NSTimeInterval)interval repeats:(BOOL)repeats block:(PVTimerBlock)block;
+- (void)resetTick;
 - (void)invalidate;
 
 @end

@@ -128,11 +128,19 @@ extension PVGame: Filed, LocalFileProvider {}
 
 public extension PVGame {
     var autoSaves: Results<PVSaveState> {
-        return saveStates.filter("isAutosave == true").sorted(byKeyPath: "date", ascending: false)
+        return saveStates.filter("flag == 2").sorted(byKeyPath: "date", ascending: false)
+    }
+
+    var fastSaves: Results<PVSaveState> {
+        return saveStates.filter("flag == 4").sorted(byKeyPath: "date", ascending: false)
     }
 
     var newestAutoSave: PVSaveState? {
         return autoSaves.first
+    }
+
+    var newestFastSave: PVSaveState? {
+        return fastSaves.first
     }
 
     var lastAutosaveAge: TimeInterval? {
