@@ -172,48 +172,32 @@ extension PVEmulatorViewController {
             }
 
             if (flag == SaveStateFlagAuto) {
-                do {
-                    // Delete the oldest auto-saves over 20 count
-                    try realm.write {
-                        let autoSaves = self.game.autoSaves
-                        if autoSaves.count > 20 {
-                            autoSaves.suffix(from: 20).forEach {
-                                DLOG("Deleting old auto save of \($0.game.title) dated: \($0.date.description)")
-                                do {
-                                    try PVSaveState.delete($0)
-                                } catch {
-                                    self.presentError("Error deleting save state: " + error.localizedDescription)
-                                }
-                                realm.delete($0)
-                            }
+                let autoSaves = self.game.autoSaves
+                let saves = Array<PVSaveState>(autoSaves)
+                if saves.count > 20 {
+                    saves.suffix(from: 20).forEach {
+                        DLOG("Deleting old auto save of \($0.game.title) dated: \($0.date.description)")
+                        do {
+                            try PVSaveState.delete($0)
+                        } catch {
+                            self.presentError("Error deleting save state: " + error.localizedDescription)
                         }
                     }
-                } catch {
-                    completion(.error(.realmDeletionError(error)))
-                    return
                 }
             }
 
             if (flag == SaveStateFlagFast) {
-                do {
-                    // Delete the oldest auto-saves over 20 count
-                    try realm.write {
-                        let fastSaves = self.game.fastSaves
-                        if fastSaves.count > 4 {
-                            fastSaves.suffix(from: 4).forEach {
-                                DLOG("Deleting old auto save of \($0.game.title) dated: \($0.date.description)")
-                                do {
-                                    try PVSaveState.delete($0)
-                                } catch {
-                                    self.presentError("Error deleting save state: " + error.localizedDescription)
-                                }
-                                realm.delete($0)
-                            }
+                let autoSaves = self.game.fastSaves
+                let saves = Array<PVSaveState>(autoSaves)
+                if saves.count > 5 {
+                    saves.suffix(from: 5).forEach {
+                        DLOG("Deleting old fast save of \($0.game.title) dated: \($0.date.description)")
+                        do {
+                            try PVSaveState.delete($0)
+                        } catch {
+                            self.presentError("Error deleting save state: " + error.localizedDescription)
                         }
                     }
-                } catch {
-                    completion(.error(.realmDeletionError(error)))
-                    return
                 }
             }
 

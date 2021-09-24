@@ -748,6 +748,13 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
     }
 
     @objc private func fastSave() {
+        let hud = MBProgressHUD(view: view)!
+        hud.mode = .text
+        hud.opacity = 0.7
+        hud.detailsLabelText = "Saved";
+        view.addSubview(hud)
+        hud.show(false)
+        hud.hide(false, afterDelay: 0.2)
         PVTimer.resetTick();
         fastSaveState { result in
             switch result {
