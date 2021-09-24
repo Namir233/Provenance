@@ -179,6 +179,11 @@ extension PVEmulatorViewController {
                         if autoSaves.count > 20 {
                             autoSaves.suffix(from: 20).forEach {
                                 DLOG("Deleting old auto save of \($0.game.title) dated: \($0.date.description)")
+                                do {
+                                    try PVSaveState.delete($0)
+                                } catch {
+                                    self.presentError("Error deleting save state: " + error.localizedDescription)
+                                }
                                 realm.delete($0)
                             }
                         }
@@ -197,6 +202,11 @@ extension PVEmulatorViewController {
                         if fastSaves.count > 4 {
                             fastSaves.suffix(from: 4).forEach {
                                 DLOG("Deleting old auto save of \($0.game.title) dated: \($0.date.description)")
+                                do {
+                                    try PVSaveState.delete($0)
+                                } catch {
+                                    self.presentError("Error deleting save state: " + error.localizedDescription)
+                                }
                                 realm.delete($0)
                             }
                         }
