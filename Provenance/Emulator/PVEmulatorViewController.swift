@@ -742,11 +742,13 @@ final class PVEmulatorViewController: PVEmulatorViewControllerRootClass, PVAudio
 
     @objc private func fastLoad() {
         if let state = game.newestFastSave {
+            PVTimer.resetTick();
             loadSaveState(state)
         }
     }
 
     @objc private func fastSave() {
+        PVTimer.resetTick();
         fastSaveState { result in
             switch result {
             case .success:
